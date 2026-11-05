@@ -1,0 +1,68 @@
+# ros2_controllers_explicit.yaml
+#
+# Controller config for EXPLICIT CONTROL of the SO-101 follower (Phase 1-2 of the arc).
+# This is *my* file — the controller set is part of "you write the controller".
+#
+#   joint_state_broadcaster       → publishes /joint_states (the observation)
+#   joint_trajectory_controller   → the reference-tracking slot: takes a timed
+#                                   trajectory (this is where the MIM / jerk-limited
+#                                   generator from Phase 4 will plug in)
+#   forward_position_controller   → direct position setpoints, no timing — the
+#                                   simplest possible explicit command (stream a
+#                                   Float64MultiArray at your own rate)
+#   gripper_controller            → the gripper needs its own action interface, because
+#                                   stalling on a closed gripper is expected, not a fault
+#
+# <robot_namespace> is substituted by the upstream launch file (empty unless
+# use_namespace:=true).
+
+controller_manager:
+  ros__parameters:
+    update_rate: 50  # Hz — the rate the hardware interface talks to the servos
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+    gripper_controller:
+      type: parallel_gripper_action_controller/GripperActionController
+
+
+joint_trajectory_controller:
+  ros__parameters:
+    command_interfaces: [position]
+    state_interfaces:  [position, velocity]
+    joints:
+      - <robot_namespace>shoulder_pan_joint
+      - <robot_namespace>shoulder_lift_joint
+      - <robot_namespace>elbow_flex_joint
+      - <robot_namespace>wrist_flex_joint
+      - <robot_namespace>wrist_roll_joint
+    # A trajectory that cannot be tracked is a safety event, not a warning:
+    # stop, don't fight the hardware.
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 0.5
+
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - <robot_namespace>shoulder_pan_joint
+      - <robot_namespace>shoulder_lift_joint
+      - <robot_namespace>elbow_flex_joint
+      - <robot_namespace>wrist_flex_joint
+      - <robot_namespace>wrist_roll_joint
+
+
+gripper_controller:
+  ros__parameters:
+    joint: <robot_namespace>gripper_joint
+    # A closed gripper that keeps pressing is normal, not a fault.
+    allow_stalling: true

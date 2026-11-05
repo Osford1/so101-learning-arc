@@ -1,0 +1,93 @@
+<!-- SO-101 local ros2_control block.
+     Derived from the upstream so_arm101 ros2_control xacro of the same role
+     (TheRobotStudio/SO-ARM100, adityakamath/so_arm_ros2 — Apache-2.0 upstream;
+     see THIRD-PARTY-NOTICES.md). Redistributed here under this repository's MIT
+     licence. Local edits: hardware block points at
+     the real follower bus instead of mock_components. -->
+<?xml version="1.0" ?>
+<!--
+  so_arm101_local.ros2_control.xacro
+
+  MY ros2_control hardware block for the SO-101 follower — passed to the upstream
+  launch file with `ros2_control_xacro_file:=<this file>`.
+
+  It differs from upstream (so_arm101.ros2_control.xacro) in exactly two ways:
+
+  1. `joint_config_file` — the real driver reads per-servo parameters (EEPROM homing
+     offset, travel limits, PID, torque/current protection, acceleration) from ONE
+     YAML file instead of from URDF <param> tags. Upstream still uses the OLD
+     `offset` param, which the current driver IGNORES (it always centres on tick
+     2048) — using the YAML is the supported path.
+  2. Only `id` stays in the URDF, because the driver matches YAML entries to joints
+     by servo id.
+
+  Servo ids (SO-ARM101 follower, same as LeRobot): 1 shoulder_pan · 2 shoulder_lift ·
+  3 elbow_flex · 4 wrist_flex · 5 wrist_roll · 6 gripper.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro
+    name="ros2_control"
+    params="prefix ros2_control_hardware_type usb_port"
+  >
+    <ros2_control name="SO_ARM101" type="system">
+      <hardware>
+        <xacro:if value="${ros2_control_hardware_type == 'mock_components'}">
+          <plugin>mock_components/GenericSystem</plugin>
+        </xacro:if>
+        <xacro:if value="${ros2_control_hardware_type == 'real'}">
+          <plugin>feetech_ros2_driver/FeetechHardwareInterface</plugin>
+          <param name="usb_port">${usb_port}</param>
+          <param name="joint_config_file">$(find so101_local)/config/so101_follower_joints.yaml</param>
+        </xacro:if>
+      </hardware>
+
+      <joint name="${prefix}shoulder_pan_joint">
+        <param name="id">1</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+
+      <joint name="${prefix}shoulder_lift_joint">
+        <param name="id">2</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+
+      <joint name="${prefix}elbow_flex_joint">
+        <param name="id">3</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+
+      <joint name="${prefix}wrist_flex_joint">
+        <param name="id">4</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+
+      <joint name="${prefix}wrist_roll_joint">
+        <param name="id">5</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+
+      <joint name="${prefix}gripper_joint">
+        <param name="id">6</param>
+        <param name="initial_position">0.0</param>
+        <command_interface name="position" />
+        <state_interface name="position" />
+        <state_interface name="velocity" />
+      </joint>
+    </ros2_control>
+  </xacro:macro>
+</robot>

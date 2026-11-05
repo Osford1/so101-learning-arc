@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Training / run artifacts. The real ones are hundreds of MB of video and
+# checkpoints; they are not published. See docs/owner-todos.md.
+outputs/
+wandb/
+checkpoints/
+*.mp4
+*.avi
+*.mov
+
+# Datasets and caches
+data/
+*.parquet
+*.hdf5
+.huggingface/
+
+# ROS 2
+build/
+install/
+log/
+*.bag
+*.db3
+
+# Typst / LaTeX build products (the compiled PDFs are committed on purpose)
+*.aux
+*.toc
+*.synctex.gz
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

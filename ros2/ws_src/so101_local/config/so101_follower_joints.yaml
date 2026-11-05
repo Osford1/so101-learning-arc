@@ -1,0 +1,84 @@
+# so101_follower_joints.yaml  —  TEMPLATE, not usable as-is.
+#
+# Per-servo configuration for feetech_ros2_driver/FeetechHardwareInterface.
+# Entries are matched to URDF joints by *servo id*, not by the YAML key.
+#
+# Fill this in by running the converter against your LeRobot calibration file:
+#
+#   python3 tools/lerobot_calib_to_ros_joints.py \
+#       --calib ~/.cache/huggingface/lerobot/calibration/robots/so101_follower/<arm_id>.json \
+#       --out src/so101_local/config/so101_follower_joints.yaml
+#
+# Units: homing_offset / range_min / range_max are RAW SERVO TICKS (0..4095).
+# The servo firmware reports  Present_Position = Actual_Position - Homing_Offset,
+# so `homing_offset = tick_reading_at_ros_zero - 2048` makes the pose you call
+# zero read as tick 2048, which is the value the driver treats as joint angle 0.
+#
+# WARNING: homing_offset is WRITTEN TO THE SERVO'S EEPROM. LeRobot already writes homing
+#    offsets during its own calibration, so leaving it out (as this template does)
+#    keeps LeRobot and ROS agreeing on where zero is. Only set it if the two
+#    disagree — and re-run `lerobot-calibrate` afterwards to re-sync LeRobot's JSON.
+
+joints:
+  shoulder_pan:
+    id: 1
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+
+  shoulder_lift:
+    id: 2
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+
+  elbow_flex:
+    id: 3
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+
+  wrist_flex:
+    id: 4
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+
+  wrist_roll:
+    id: 5
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+
+  gripper:
+    id: 6
+    range_min: REPLACE_ME
+    range_max: REPLACE_ME
+    p_coefficient: 16
+    i_coefficient: 0
+    d_coefficient: 32
+    return_delay_time: 0
+    acceleration: 254
+    max_torque_limit: 500
+    protection_current: 250
+    overload_torque: 25

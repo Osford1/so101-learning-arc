@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRT ML/RL layer - typed-decision hooks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1240px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      max-width: 62ch;
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 0.9fr;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(45,49,66,0.12);
+      border-radius: 6px;
+      padding: 1.25rem;
+    }
+    .card .eyebrow { margin-bottom: 0.65rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .card-header h3 { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.ink   { background: var(--color-ink); }
+    .card-dot.soft  { background: rgba(45,49,66,0.28); }
+    .card p, .card li { font-size: 0.83rem; line-height: 1.55; color: var(--color-muted); }
+    .card ul { padding-left: 1rem; }
+    .card li { margin-bottom: 0.35rem; }
+    .card code {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--color-ink);
+    }
+    footer {
+      margin-top: 1.75rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid rgba(45,49,66,0.10);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.04em;
+      color: rgba(45,49,66,0.55);
+      line-height: 1.7;
+    }
+    @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · SRT embodied-AI · ML/RL layer</p>
+    <h1>Where a typed-decision service plugs into the ML/RL layer</h1>
+    <p class="subtitle">SO-101 gummy-bear pipeline: teleop data in, policies trained, rollouts scored. The decision service enters as a typed-decision step, not as the model that drives anything.</p>
+
+    <svg viewBox="0 0 1160 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ml-rl-title ml-rl-desc">
+      <title id="ml-rl-title">SRT ML/RL layer with typed-decision hooks</title>
+      <desc id="ml-rl-desc">Architecture diagram of the SRT embodied-AI training pipeline: teleop episodes flow through a typed-decision episode quality-control gate into ACT, Diffusion and SmolVLA training and the HIL-SERL reinforcement-learning loop, then to evaluation rollouts and a typed-decision failure-taxonomy step. Both hooks call a shared decision service, and the failure taxonomy feeds targeted re-recording back to the episode store.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ============ ZONES (drawn first) ============ -->
+      <rect x="40" y="124" width="300" height="276" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="147" y="128" width="86" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="190" y="137" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DATA + CURATION</text>
+
+      <rect x="380" y="124" width="340" height="276" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="502" y="128" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="550" y="137" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">TRAIN · IL TO RL</text>
+
+      <rect x="760" y="124" width="324" height="276" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="876" y="128" width="92" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="922" y="137" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">EVAL + DIAGNOSIS</text>
+
+      <!-- ============ ARROWS (before boxes) ============ -->
+
+      <!-- 1. Teleop episodes -> Episode QC gate (vertical) -->
+      <line x1="160" y1="228" x2="160" y2="276" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="118" y="246" width="30" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="133" y="255" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RAW</text>
+
+      <!-- 2. Episode QC gate -> Teleop episodes (dashed return, relabel) -->
+      <line x1="232" y1="276" x2="232" y2="228" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="244" y="246" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="266" y="255" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RELABEL</text>
+
+      <!-- 3. Episode QC gate -> Policy training (KEEP, accent) -->
+      <path d="M 304,324 H 356 Q 364,324 364,316 V 200 Q 364,192 372,192 H 412" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <rect x="317" y="252" width="30" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="332" y="261" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">KEEP</text>
+
+      <!-- 4. Policy training -> HIL-SERL loop (vertical) -->
+      <line x1="520" y1="228" x2="520" y2="276" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="438" y="246" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="468" y="255" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">WARM START</text>
+
+      <!-- 5. Policy training -> Eval rollouts (horizontal) -->
+      <line x1="688" y1="184" x2="792" y2="184" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="725" y="164" width="30" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="740" y="173" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EVAL</text>
+
+      <!-- 6. HIL-SERL loop -> Eval rollouts (elbow up) -->
+      <path d="M 688,324 H 732 Q 740,324 740,316 V 220 Q 740,212 748,212 H 792" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="748" y="258" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="768" y="267" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">POLICY</text>
+
+      <!-- 7. Eval rollouts -> Failure taxonomy (vertical) -->
+      <line x1="920" y1="228" x2="920" y2="276" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="941" y="246" width="70" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="976" y="255" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">FAILURE LOGS</text>
+
+      <!-- 8. Episode QC gate -> decision service (dashed) -->
+      <line x1="160" y1="372" x2="160" y2="500" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="86" y="428" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="116" y="437" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TYPED CALL</text>
+
+      <!-- 9. Failure taxonomy -> decision service (dashed) -->
+      <line x1="920" y1="372" x2="920" y2="500" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="946" y="428" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="976" y="437" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TYPED CALL</text>
+
+      <!-- 10. Failure taxonomy -> Teleop episodes (targeted re-recording, top arc) -->
+      <path d="M 1052,324 H 1104 Q 1112,324 1112,316 V 64 Q 1112,56 1104,56 H 204 Q 196,56 196,64 V 156" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="599" y="36" width="102" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="45" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TARGETED RECORDING</text>
+
+      <!-- ============ NODES ============ -->
+
+      <!-- Teleop episodes - store -->
+      <rect x="72" y="156" width="232" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="72" y="156" width="232" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="80" y="162" width="28" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="94" y="171" fill="rgba(79,93,117,0.85)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">DATA</text>
+      <text x="188" y="194" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Teleop episodes</text>
+      <text x="188" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">LeRobotDataset · 50-150 eps</text>
+
+      <!-- Episode QC gate - FOCAL -->
+      <rect x="72" y="276" width="232" height="96" rx="6" fill="#f5f5f5"/>
+      <rect x="72" y="276" width="232" height="96" rx="6" fill="rgba(235,108,54,0.09)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="80" y="282" width="28" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="94" y="291" fill="rgba(79,93,117,0.85)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LLM</text>
+      <text x="188" y="326" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Episode QC gate</text>
+      <text x="188" y="342" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Choice: keep / relabel / discard</text>
+
+      <!-- Policy training -->
+      <rect x="412" y="156" width="276" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="412" y="156" width="276" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="420" y="162" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="434" y="171" fill="rgba(45,49,66,0.65)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TRAIN</text>
+      <text x="550" y="194" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Policy training</text>
+      <text x="550" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ACT · Diffusion · SmolVLA</text>
+
+      <!-- HIL-SERL loop -->
+      <rect x="412" y="276" width="276" height="96" rx="6" fill="#f5f5f5"/>
+      <rect x="412" y="276" width="276" height="96" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="420" y="282" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="434" y="291" fill="rgba(45,49,66,0.65)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RL</text>
+      <text x="550" y="326" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">HIL-SERL loop</text>
+      <text x="550" y="342" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SAC + reward classifier</text>
+
+      <!-- Eval rollouts -->
+      <rect x="792" y="156" width="260" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="792" y="156" width="260" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="800" y="162" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="814" y="171" fill="rgba(45,49,66,0.65)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EVAL</text>
+      <text x="922" y="194" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Eval rollouts</text>
+      <text x="922" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">lerobot-eval · N=50 trials</text>
+
+      <!-- Failure taxonomy -->
+      <rect x="792" y="276" width="260" height="96" rx="6" fill="#f5f5f5"/>
+      <rect x="792" y="276" width="260" height="96" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="800" y="282" width="28" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="814" y="291" fill="rgba(79,93,117,0.85)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LLM</text>
+      <text x="922" y="326" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Failure taxonomy</text>
+      <text x="922" y="342" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Choice: perception · grasp · policy</text>
+
+      <!-- decision service -->
+      <rect x="72" y="500" width="1016" height="96" rx="6" fill="#f5f5f5"/>
+      <rect x="72" y="500" width="1016" height="96" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="80" y="506" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="94" y="515" fill="rgba(45,49,66,0.65)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+      <text x="580" y="550" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Decision service</text>
+      <text x="580" y="566" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">hosted LLM API · state + typed questions in · ~100 ms · billed by the provider</text>
+
+      <!-- ============ LEGEND ============ -->
+      <line x1="40" y1="636" x2="1120" y2="636" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="658" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <line x1="120" y1="652" x2="146" y2="652" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="154" y="655" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">FLOW</text>
+      <line x1="230" y1="652" x2="256" y2="652" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="264" y="655" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">TYPED CALL / RETURN</text>
+      <rect x="420" y="646" width="12" height="12" rx="2" fill="rgba(235,108,54,0.09)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="440" y="655" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">LLM INSERTION POINT</text>
+      <line x1="600" y1="652" x2="626" y2="652" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <text x="634" y="655" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">PRIMARY OUTPUT</text>
+    </svg>
+
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">The focal hook</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>Episode QC gate</h3></div>
+        <p>Sits between recording and <code>lerobot-train</code>. Per episode it sends structured telemetry - start pose vs <code>fixed_reset_joint_positions</code>, joint-trace jerk, gripper state, the success flag - plus three typed questions, and gets back <code>keep</code> / <code>relabel</code> / <code>discard</code> with a probability each.</p>
+        <ul>
+          <li>Attacks the known failure: 30 episodes whose resets drifted, producing erratic motion.</li>
+          <li>Cost is irrelevant at this volume - a whole dataset is cents.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Why this shape</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>Judgment, not text</h3></div>
+        <p>Both hooks ask a question whose answer set you can name in advance, which is exactly a typed-decision service's shape. Deterministic code still owns the pipeline; the service supplies the label and a probability you threshold yourself.</p>
+        <ul>
+          <li>Independent tests found the confidence is honest near 0 and 1 and a coin flip in the middle - fit your own cut-offs.</li>
+          <li>The service is text and structured data only. The vision reward classifier stays in LeRobot.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Deliberately cut</p>
+        <div class="card-header"><span class="card-dot soft"></span><h3>HIL-SERL supervisor</h3></div>
+        <p>A third hook that decides <code>intervene</code> / <code>continue</code> / <code>abort</code> during RL rollouts belongs in this layer, but not in this diagram.</p>
+        <ul>
+          <li>At 70-500 ms per call it fits a 1-2 Hz supervisor loop, not a 30 Hz control loop.</li>
+          <li>Add it at Phase 8, once the arm is attached and teleop is stable.</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      SRT embodied-AI · LeRobot SO-101 · pipeline per <code>docs/hilserl-codes3-6-runbook.md</code> and <code>docs/gummy-bear-roadmap.md</code><br>
+      Typed-decision LLM hooks (design sketch, 2026-09-22) - not implemented
+    </footer>
+  </div>
+</body>
+</html>
